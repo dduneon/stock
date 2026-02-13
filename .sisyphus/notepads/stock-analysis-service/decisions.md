@@ -1,0 +1,2 @@
+- Used a factory pattern (create_app) for Flask initialization to allow easier testing and multiple configurations.
+- Included Celery initialization in the app factory to ensure tasks have access to the app context.

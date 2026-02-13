@@ -1,0 +1,2 @@
+- Docker and Docker Compose were not found in the current environment (darwin), preventing full verification of the infrastructure setup.
+- Python dependencies (flask, sqlalchemy, etc.) are not installed in the host environment, causing LSP diagnostics to report missing imports.

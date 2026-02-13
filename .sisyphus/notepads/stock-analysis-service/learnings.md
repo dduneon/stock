@@ -1,0 +1,4 @@
+- Initialized project with Flask, PostgreSQL (TimescaleDB), and Redis.
+- Configured Flask app to use environment variables with a default fallback for development.
+- Implemented a basic health check endpoint at /health.
+- Structured the backend with a clear separation between app initialization (app/__init__.py) and entry point (app.py).
