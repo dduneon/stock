@@ -177,7 +177,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 1
   **Verification**: Run collector → DB populated with KOSPI/KOSDAQ tickers
 
-- [ ] 4. **US Stock Data Collector (yfinance)**
+- [x] 4. **US Stock Data Collector (yfinance)**
   **What to do**:
   - Implement `USMarketService` to fetch S&P 500 list and OHLCV
   - Handle connectivity issues

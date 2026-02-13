@@ -1,7 +1,7 @@
 import logging
 import time
 from app import celery
-from app.services.market_data import KoreanMarketService
+from app.services.market_data import KoreanMarketService, USMarketService
 from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
@@ -48,3 +48,38 @@ def update_kr_prices():
         logger.info("Completed update_kr_prices task")
     except Exception as e:
         logger.error(f"Error in update_kr_prices task: {e}")
+
+
+@celery.task
+def update_us_stocks():
+    logger.info("Starting update_us_stocks task")
+    try:
+        USMarketService.update_stocks()
+        logger.info("Completed update_us_stocks task")
+    except Exception as e:
+        logger.error(f"Error in update_us_stocks task: {e}")
+
+@celery.task
+def update_us_prices():
+    logger.info("Starting update_us_prices task")
+    try:
+        stocks = Stock.query.filter(Stock.market == 'S&P 500').all()
+        logger.info(f"Found {len(stocks)} US stocks to update.")
+        
+        count = 0
+        for stock in stocks:
+            try:
+                USMarketService.update_prices(stock.id, stock.ticker)
+                count += 1
+                if count % 50 == 0:
+                    logger.info(f"Updated {count} US stocks...")
+                
+                time.sleep(0.5)
+                
+            except Exception as e:
+                logger.error(f"Failed to update prices for {stock.ticker}: {e}")
+                continue
+        
+        logger.info("Completed update_us_prices task")
+    except Exception as e:
+        logger.error(f"Error in update_us_prices task: {e}")

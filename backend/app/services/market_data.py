@@ -2,12 +2,169 @@ import logging
 from datetime import datetime, timedelta
 import pandas as pd
 import FinanceDataReader as fdr
+import yfinance as yf
+import requests
 from sqlalchemy.dialects.postgresql import insert
 from app import db
 from app.models.stock import Stock
 from app.models.price import StockPrice
 
 logger = logging.getLogger(__name__)
+
+class USMarketService:
+    @staticmethod
+    def fetch_tickers():
+        """
+        Fetch S&P 500 tickers from Wikipedia.
+        """
+        try:
+            url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            # Use requests to avoid 403
+            r = requests.get(url, headers=headers)
+            # Use pandas read_html on the response text
+            tables = pd.read_html(r.text)
+            df = tables[0]
+            return df
+        except Exception as e:
+            logger.error(f"Error fetching US tickers: {str(e)}")
+            return pd.DataFrame()
+
+    @staticmethod
+    def fetch_ohlcv(ticker, start_date, end_date=None):
+        """
+        Fetch OHLCV data for a specific ticker using yfinance.
+        """
+        try:
+            # yfinance expects start_date in 'YYYY-MM-DD' format
+            stock = yf.Ticker(ticker)
+            # history
+            df = stock.history(start=start_date, end=end_date, interval="1d")
+            return df
+        except Exception as e:
+            logger.error(f"Error fetching OHLCV for {ticker}: {str(e)}")
+            return pd.DataFrame()
+
+    @classmethod
+    def update_stocks(cls):
+        """
+        Update Stock table with latest S&P 500 tickers.
+        """
+        logger.info("Starting stock update for US (S&P 500)")
+        df = cls.fetch_tickers()
+        if df.empty:
+            logger.warning("No tickers found for US.")
+            return
+
+        records = []
+        
+        # Wikipedia S&P 500 table columns:
+        # Symbol, Security, GICS Sector, GICS Sub-Industry, Headquarters Location, Date first added, CIK, Founded
+        
+        for _, row in df.iterrows():
+            ticker = str(row.get('Symbol', ''))
+            if not ticker:
+                continue
+            
+            # yfinance uses '-' instead of '.' for tickers like BRK.B
+            ticker = ticker.replace('.', '-')
+                
+            name = row.get('Security', '')
+            sector = row.get('GICS Sector', None)
+            industry = row.get('GICS Sub-Industry', None)
+            
+            market = 'S&P 500' 
+            
+            records.append({
+                'ticker': ticker,
+                'name': name,
+                'market': market,
+                'sector': sector,
+                'industry': industry,
+                'updated_at': datetime.utcnow()
+            })
+
+        if not records:
+            return
+
+        stmt = insert(Stock).values(records)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['ticker'],
+            set_={
+                'name': stmt.excluded.name,
+                'market': stmt.excluded.market,
+                'sector': stmt.excluded.sector,
+                'industry': stmt.excluded.industry,
+                'updated_at': stmt.excluded.updated_at
+            }
+        )
+        
+        try:
+            db.session.execute(stmt)
+            db.session.commit()
+            logger.info(f"Updated {len(records)} stocks for US.")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to update US stocks: {str(e)}")
+
+    @classmethod
+    def update_prices(cls, stock_id, ticker, start_date=None):
+        """
+        Update prices for a specific stock using yfinance.
+        """
+        if not start_date:
+            last_price = StockPrice.query.filter_by(ticker_id=stock_id).order_by(StockPrice.timestamp.desc()).first()
+            if last_price:
+                start_date = (last_price.timestamp + timedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                start_date = '2000-01-01'
+
+        try:
+            df = cls.fetch_ohlcv(ticker, start_date)
+            if df.empty:
+                return
+
+            records = []
+            for index, row in df.iterrows():
+                try:
+                    # index is Timestamp
+                    timestamp = index.to_pydatetime()
+                    if timestamp.tzinfo:
+                        timestamp = timestamp.replace(tzinfo=None)
+
+                    records.append({
+                        'ticker_id': stock_id,
+                        'timestamp': timestamp,
+                        'open': float(row['Open']),
+                        'high': float(row['High']),
+                        'low': float(row['Low']),
+                        'close': float(row['Close']),
+                        'volume': int(row['Volume'])
+                    })
+                except Exception as e:
+                    logger.error(f"Error parsing row for {ticker} at {index}: {e}")
+                    continue
+
+            if not records:
+                return
+
+            stmt = insert(StockPrice).values(records)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=['ticker_id', 'timestamp'],
+                set_={
+                    'open': stmt.excluded.open,
+                    'high': stmt.excluded.high,
+                    'low': stmt.excluded.low,
+                    'close': stmt.excluded.close,
+                    'volume': stmt.excluded.volume
+                }
+            )
+            
+            db.session.execute(stmt)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to update prices for {ticker}: {str(e)}")
 
 class KoreanMarketService:
     @staticmethod

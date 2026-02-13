@@ -5,3 +5,7 @@
 - Implemented `KoreanMarketService` to interface with `FinanceDataReader` (FDR) for retrieving KOSPI and KOSDAQ stock data.
 - Used SQLAlchemy's `on_conflict_do_update` (PostgreSQL `UPSERT`) to handle idempotent updates of `Stock` and `StockPrice` records efficiently.
 - Added rate limiting (sleep) in Celery tasks to respect data source constraints during bulk updates.
+- Implemented `USMarketService` using `yfinance` to fetch S&P 500 stocks.
+- Used `requests` and `lxml` to robustly fetch Wikipedia S&P 500 list, handling potential user-agent blocks.
+- Mapped US ticker format (e.g. `BRK.B`) to `yfinance` format (`BRK-B`).
+- Added corresponding Celery tasks `update_us_stocks` and `update_us_prices` with rate limiting.

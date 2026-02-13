@@ -15,6 +15,8 @@ pykrx==1.0.46
 
 # US Market
 yfinance==0.2.37
+lxml>=4.9.0
+requests>=2.31.0
 
 # Data Analysis
 pandas==2.2.0
