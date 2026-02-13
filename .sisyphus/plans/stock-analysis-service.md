@@ -252,7 +252,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 3
   **Verification**: Playwright test confirms chart canvas rendering
 
-- [ ] 13. **Dashboard & Recommendation Pages**
+- [x] 13. **Dashboard & Recommendation Pages**
   **What to do**:
   - Implement Home page with Category Sliders
   - Implement "Top Picks" tables with sorting

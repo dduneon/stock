@@ -1,10 +1,53 @@
+"use client"
+
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Link from "next/link"
 import { FeatureGrid } from "@/components/feature-grid"
+import { useState, useEffect } from "react"
+import { ArrowRight } from "lucide-react"
+
+type TopPick = {
+  ticker: string
+  name: string
+  total_score: number
+  grade: string
+}
+
+const gradeColors: Record<string, string> = {
+  'A+': 'bg-chart-1 text-background',
+  'A': 'bg-chart-1/80 text-background',
+  'B+': 'bg-chart-3 text-background',
+  'B': 'bg-chart-3/80 text-background',
+  'C+': 'bg-chart-2/60 text-background',
+  'C': 'bg-chart-2/40 text-background',
+}
 
 export default function Home() {
+  const [topPicks, setTopPicks] = useState<TopPick[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTopPicks = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+        const response = await fetch(`${apiUrl}/recommendations?category=top_picks&limit=5`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          setTopPicks(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch top picks:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTopPicks()
+  }, [])
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -34,6 +77,76 @@ export default function Home() {
               </Button>
             </Link>
           </div>
+        </section>
+
+        {/* Top Picks Preview */}
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Top Picks <span className="text-accent">Today</span>
+            </h2>
+            <Link href="/recommendations">
+              <Button variant="outline" className="rounded-none border-2 font-semibold group">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid gap-3">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 bg-muted/50 border-2 border-border animate-pulse"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                />
+              ))}
+            </div>
+          ) : topPicks.length > 0 ? (
+            <div className="border-4 border-border bg-card">
+              {topPicks.map((stock, idx) => (
+                <Link
+                  key={stock.ticker}
+                  href={`/stock/${stock.ticker}`}
+                  className="flex items-center justify-between p-4 md:p-6 border-b-2 last:border-b-0 border-border hover:bg-accent/5 transition-all group"
+                  style={{
+                    animation: 'slideIn 0.4s ease-out',
+                    animationDelay: `${idx * 80}ms`,
+                    animationFillMode: 'backwards',
+                  }}
+                >
+                  <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
+                    <div className="h-10 w-10 md:h-12 md:w-12 bg-accent/20 flex items-center justify-center font-mono font-bold text-lg md:text-xl flex-shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                      #{idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono font-bold text-lg md:text-xl mb-1 group-hover:text-accent transition-colors">
+                        {stock.ticker}
+                      </div>
+                      <div className="text-sm md:text-base text-muted-foreground line-clamp-1">
+                        {stock.name}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 md:gap-6 flex-shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-xs uppercase font-semibold text-muted-foreground mb-1 tracking-wide">
+                        Score
+                      </div>
+                      <div className="font-mono font-bold text-xl md:text-2xl tabular-nums">
+                        {stock.total_score}
+                      </div>
+                    </div>
+                    <span className={`px-3 md:px-4 py-2 font-bold font-mono text-sm md:text-base ${gradeColors[stock.grade] || 'bg-muted text-muted-foreground'}`}>
+                      {stock.grade}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <FeatureGrid />
@@ -86,6 +199,19 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </div>
   )
 }
