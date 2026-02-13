@@ -228,7 +228,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 2
   **Verification**: `curl` returns valid JSON data
 
-- [ ] 10. **API Development: User System (Auth & Watchlist)**
+- [x] 10. **API Development: User System (Auth & Watchlist)**
   **What to do**:
   - JWT Authentication (Login/Register)
   - GET/POST `/api/watchlist`
