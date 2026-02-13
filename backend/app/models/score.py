@@ -16,7 +16,7 @@ class StockScore(db.Model):
     
     # Aggregate
     total_score = db.Column(db.Integer)
-    grade = db.Column(db.String(2)) # A, B, C, D, F, etc.
+    grade = db.Column(db.String(20)) # Strong Buy, Buy, Hold, Sell
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

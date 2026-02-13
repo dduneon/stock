@@ -212,7 +212,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 2
   **Verification**: `pytest tests/test_scoring.py` passes
 
-- [ ] 8. **Scoring Engine: Aggregation & Ranking**
+- [x] 8. **Scoring Engine: Aggregation & Ranking**
   **What to do**:
   - Combine factor scores into weighted total
   - Assign grades (Strong Buy, Buy, Hold...)

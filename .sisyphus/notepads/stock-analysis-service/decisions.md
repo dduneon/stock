@@ -49,3 +49,19 @@
     - RSI and Return are calculated using `pandas` on `StockPrice` history (last 200 days).
     - Uses `higher is better` logic relative to sector peers.
     - Expects `datetime` objects for strict comparison or handles `date` by including full day prices.
+
+- **Scoring Aggregation & Ranking**:
+  - **Weighted Average**:
+    - Valuation: 30%
+    - Profitability: 25%
+    - Growth: 25%
+    - Momentum: 20%
+  - **Grading Scale**:
+    - Strong Buy: >= 85
+    - Buy: >= 70
+    - Hold: >= 40
+    - Sell: < 40
+  - **Daily Scoring Task**:
+    - Iterates over all stocks and calculates scores for the current date.
+    - Handles exceptions per stock to ensure the task continues even if one stock fails.
+    - Uses upsert logic (check existing -> update or create) for `StockScore`.

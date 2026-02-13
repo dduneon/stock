@@ -420,23 +420,72 @@ class ScoringService:
         score.growth_score = growth_score
         score.momentum_score = mom_score
         
-        # Simple total score for now (average of available components)
-        components = []
-        if val_score is not None: components.append(val_score)
-        if prof_score is not None: components.append(prof_score)
-        if growth_score is not None: components.append(growth_score)
-        if mom_score is not None: components.append(mom_score)
+        # Weighted Average
+        weights = {
+            'valuation': 0.30,
+            'profitability': 0.25,
+            'growth': 0.25,
+            'momentum': 0.20
+        }
         
-        if components:
-            score.total_score = int(sum(components) / len(components))
+        weighted_sum = 0
+        total_weight = 0
+        
+        if val_score is not None:
+            weighted_sum += val_score * weights['valuation']
+            total_weight += weights['valuation']
+            
+        if prof_score is not None:
+            weighted_sum += prof_score * weights['profitability']
+            total_weight += weights['profitability']
+            
+        if growth_score is not None:
+            weighted_sum += growth_score * weights['growth']
+            total_weight += weights['growth']
+            
+        if mom_score is not None:
+            weighted_sum += mom_score * weights['momentum']
+            total_weight += weights['momentum']
+            
+        if total_weight > 0:
+            final_score = int(weighted_sum / total_weight)
+            score.total_score = final_score
             
             # Assign Grade
-            if score.total_score >= 80: score.grade = 'A'
-            elif score.total_score >= 60: score.grade = 'B'
-            elif score.total_score >= 40: score.grade = 'C'
-            elif score.total_score >= 20: score.grade = 'D'
-            else: score.grade = 'F'
+            if final_score >= 85:
+                score.grade = 'Strong Buy'
+            elif final_score >= 70:
+                score.grade = 'Buy'
+            elif final_score >= 40:
+                score.grade = 'Hold'
+            else:
+                score.grade = 'Sell'
         
         db.session.add(score)
         db.session.commit()
         return score
+
+    @staticmethod
+    def run_daily_scoring(date=None):
+        """
+        Runs scoring for all stocks in the database for the given date.
+        """
+        if date is None:
+            date = datetime.utcnow().date()
+            
+        stocks = Stock.query.all()
+        print(f"Starting daily scoring for {len(stocks)} stocks on {date}")
+        
+        count = 0
+        for stock in stocks:
+            try:
+                ScoringService.calculate_score(stock.id, date)
+                count += 1
+                if count % 100 == 0:
+                    print(f"Processed {count} stocks...")
+            except Exception as e:
+                print(f"Error scoring stock {stock.symbol}: {e}")
+                continue
+                
+        print(f"Daily scoring completed. Processed {count} stocks.")
+

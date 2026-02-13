@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from datetime import datetime, date
 from app import create_app, db
 from app.models.stock import Stock
@@ -187,6 +188,86 @@ def test_momentum_score(app):
     db.session.add_all([p1_curr, p1_prev, p2_curr, p2_prev])
     db.session.commit()
     
+    # Calculate score
     score = ScoringService.calculate_momentum_score(s1.id, base_date)
+    # 2 stocks, M1 is better.
+    # Peers better than M1? 0.
+    # Total peers 2.
+    # But wait, logic: score = (count_worse_than_target / total) * 100?
+    # No, "better_than_count" = sum(p < target) for "higher is better"
+    # Wait, if higher is better:
+    # Target 50. Peers [-10, 50].
+    # Peers < 50: [-10]. Count = 1.
+    # Score = 1/2 * 100 = 50.
     assert score == 50
+
+def test_calculate_score_aggregation(app):
+    """Test full score aggregation and grading"""
+    stock = Stock(ticker="TEST", name="Test Stock", sector="Tech")
+    db.session.add(stock)
+    db.session.commit()
+    
+    # Mocking component scores by overriding the methods temporarily
+    # OR setup data to produce specific scores. 
+    # Setting up data is harder because of relative scoring.
+    # Easier to mock the internal methods if I can.
+    # But standard pytest mocking requires `unittest.mock`.
+    
+    from unittest.mock import patch
+    
+    with patch('app.services.scoring_service.ScoringService.calculate_valuation_score') as mock_val, \
+         patch('app.services.scoring_service.ScoringService.calculate_profitability_score') as mock_prof, \
+         patch('app.services.scoring_service.ScoringService.calculate_growth_score') as mock_growth, \
+         patch('app.services.scoring_service.ScoringService.calculate_momentum_score') as mock_mom:
+         
+        mock_val.return_value = 80
+        mock_prof.return_value = 80
+        mock_growth.return_value = 80
+        mock_mom.return_value = 80
+        
+        # Total should be 80
+        # Grade should be 'Buy' (>= 70)
+        
+        score = ScoringService.calculate_score(stock.id, date(2024, 1, 1))
+        
+        assert score.total_score == 80
+        assert score.grade == 'Buy'
+        
+        # Test Strong Buy
+        mock_val.return_value = 90
+        mock_prof.return_value = 90
+        mock_growth.return_value = 90
+        mock_mom.return_value = 90
+        # Total 90 -> Strong Buy
+        
+        score = ScoringService.calculate_score(stock.id, date(2024, 1, 2))
+        assert score.total_score == 90
+        assert score.grade == 'Strong Buy'
+        
+        # Test missing component (redistribution)
+        mock_mom.return_value = None
+        # Val 90 (30%), Prof 90 (25%), Growth 90 (25%) -> Total weight 80%
+        # Sum = 27 + 22.5 + 22.5 = 72
+        # Final = 72 / 0.8 = 90
+        
+        score = ScoringService.calculate_score(stock.id, date(2024, 1, 3))
+        assert score.total_score == 90
+
+def test_run_daily_scoring(app):
+    """Test run_daily_scoring iterates over stocks"""
+    s1 = Stock(ticker="S1", name="Stock1", sector="Tech")
+    s2 = Stock(ticker="S2", name="Stock2", sector="Tech")
+    db.session.add_all([s1, s2])
+    db.session.commit()
+    
+    # Mock calculate_score to avoid complex setup
+    with patch('app.services.scoring_service.ScoringService.calculate_score') as mock_calc:
+        ScoringService.run_daily_scoring(date(2024, 1, 1))
+        
+        # Should be called twice
+        assert mock_calc.call_count == 2
+        mock_calc.assert_any_call(s1.id, date(2024, 1, 1))
+        mock_calc.assert_any_call(s2.id, date(2024, 1, 1))
+
+
 

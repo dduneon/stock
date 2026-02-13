@@ -3,6 +3,20 @@ import time
 from app import celery
 from app.services.market_data import KoreanMarketService, USMarketService
 from app.services.financial_service import KoreanFinancialService, USFinancialService
+from app.services.scoring_service import ScoringService
+
+@celery.task
+def update_stock_scores():
+    """
+    Task to update daily stock scores for all stocks.
+    """
+    logger.info("Starting update_stock_scores task")
+    try:
+        ScoringService.run_daily_scoring()
+        logger.info("Completed update_stock_scores task")
+    except Exception as e:
+        logger.error(f"Error in update_stock_scores task: {e}")
+
 from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
