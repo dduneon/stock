@@ -220,7 +220,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 2
   **Verification**: Run scoring job → `stock_scores` table populated
 
-- [ ] 9. **API Development: Stock Data & Recommendations**
+- [x] 9. **API Development: Stock Data & Recommendations**
   **What to do**:
   - GET `/api/stocks/{ticker}` (Detail + Chart data)
   - GET `/api/recommendations` (Filtered lists)

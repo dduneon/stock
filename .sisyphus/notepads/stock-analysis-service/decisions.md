@@ -65,3 +65,16 @@
     - Iterates over all stocks and calculates scores for the current date.
     - Handles exceptions per stock to ensure the task continues even if one stock fails.
     - Uses upsert logic (check existing -> update or create) for `StockScore`.
+
+- **API Design Decisions**:
+  - **Endpoints Structure**:
+    - `/api/stocks/{ticker}`: Returns comprehensive stock details including latest financials and scores. This reduces the number of requests needed for the frontend detail page.
+    - `/api/stocks/{ticker}/prices`: Separate endpoint for chart data to keep the initial load light. Supports `start_date` and `end_date` filtering. Defaults to last 30 days.
+    - `/api/recommendations`: Returns a list of stocks based on calculated scores. Uses query param `category` to filter by investment strategy (undervalued, growth, momentum, top_picks).
+    - `/api/search`: Simple `ILIKE` search for ticker and name.
+  - **Libraries**:
+    - Used `Flask-RESTX` for automatic Swagger documentation and response marshalling.
+    - Used `marshmallow` style models in `flask-restx` for clear response schemas.
+  - **Performance**:
+    - `latest_financials` and `latest_score` are fetched with specific queries to avoid loading all history.
+    - `prices` endpoint defaults to 30 days history to prevent large payloads.
