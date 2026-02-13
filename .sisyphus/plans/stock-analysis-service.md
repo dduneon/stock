@@ -161,7 +161,7 @@ Scenario: View Stock Detail
   - **Skills**: [`git-master`]
   **Verification**: `docker compose up -d && curl http://localhost:5000/health` → returns "ok"
 
-- [ ] 2. **Database Schema Design (TimescaleDB)**
+- [x] 2. **Database Schema Design (TimescaleDB)**
   **What to do**:
   - Create models: `Stock`, `StockPrice` (Hypertable), `Financials`, `User`, `Watchlist`
   - Setup Alembic migrations

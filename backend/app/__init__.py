@@ -20,6 +20,10 @@ def create_app(config_name=None):
     
     db.init_app(app)
     migrate.init_app(app, db)
+    
+    # Import models so Alembic can detect them
+    from app import models
+
     cache.init_app(app)
     
     # Configure Celery
