@@ -185,7 +185,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 1
   **Verification**: Run collector → DB populated with US tickers
 
-- [ ] 5. **Financial Data Collector (Fundamentals)**
+- [x] 5. **Financial Data Collector (Fundamentals)**
   **What to do**:
   - Fetch P/E, P/B, ROE, Revenue Growth etc.
   - Map to `Financials` model

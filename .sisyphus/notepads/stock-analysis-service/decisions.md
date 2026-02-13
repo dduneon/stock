@@ -23,3 +23,10 @@
 - **Market Data Source**:
   - Selected `FinanceDataReader` as the primary library for Korean stock data due to its reliability and ease of use, with `pykrx` as a potential fallback.
   - Implemented batch upserts for stock prices to minimize database round-trips during daily updates.
+
+- **Financial Data Collection**:
+  - Implemented `KoreanFinancialService` and `USFinancialService` in `backend/app/services/financial_service.py` to keep financial logic separate from market data logic.
+  - `KoreanFinancialService` uses `pykrx` to fetch daily fundamentals (PER, PBR, EPS, BPS) and calculates ROE.
+  - `USFinancialService` uses `yfinance` to fetch both historical (Revenue, Net Income) and current (TTM Ratios) data.
+  - Handled data mapping to `Financials` model with appropriate type casting (e.g., float to int for BigInteger fields).
+  - Added Celery tasks `update_kr_financials` and `update_us_financials` in `backend/app/tasks/collector.py`.
