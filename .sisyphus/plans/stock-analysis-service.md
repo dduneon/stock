@@ -245,7 +245,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 3
   **Verification**: `npm run dev` → UI loads with dark mode toggle
 
-- [ ] 12. **TradingView Chart Integration**
+- [x] 12. **TradingView Chart Integration**
   **What to do**:
   - Create `StockChart` component using Lightweight Charts
   - Fetch OHLCV data from API and render CandleSeries
