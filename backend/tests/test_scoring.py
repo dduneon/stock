@@ -4,7 +4,9 @@ from app import create_app, db
 from app.models.stock import Stock
 from app.models.financials import Financials
 from app.services.scoring_service import ScoringService
+from app.models.price import StockPrice
 from app.models.score import StockScore
+from datetime import timedelta
 
 @pytest.fixture
 def app():
@@ -142,3 +144,49 @@ def test_negative_pe_handling(app):
     # Should be 0 or heavily penalized
     # My logic returns 0 if target <= 0
     assert score == 0
+
+def test_growth_score(app):
+    """Test growth score calculation logic"""
+    s1 = Stock(ticker="G1", name="Growth1", sector="Tech")
+    s2 = Stock(ticker="G2", name="Growth2", sector="Tech")
+    db.session.add_all([s1, s2])
+    db.session.commit()
+
+    # G1: 50% Growth
+    f1_curr = Financials(ticker_id=s1.id, fiscal_date=date(2023, 12, 31), revenue=150, eps=1.5)
+    f1_prev = Financials(ticker_id=s1.id, fiscal_date=date(2022, 12, 31), revenue=100, eps=1.0)
+    
+    # G2: 10% Growth
+    f2_curr = Financials(ticker_id=s2.id, fiscal_date=date(2023, 12, 31), revenue=110, eps=1.1)
+    f2_prev = Financials(ticker_id=s2.id, fiscal_date=date(2022, 12, 31), revenue=100, eps=1.0)
+    
+    db.session.add_all([f1_curr, f1_prev, f2_curr, f2_prev])
+    db.session.commit()
+    
+    score = ScoringService.calculate_growth_score(s1.id, date(2024, 1, 1))
+    assert score == 50
+
+def test_momentum_score(app):
+    """Test momentum score calculation logic"""
+    s1 = Stock(ticker="M1", name="Mom1", sector="Tech")
+    s2 = Stock(ticker="M2", name="Mom2", sector="Tech")
+    db.session.add_all([s1, s2])
+    db.session.commit()
+    
+    base_date = datetime(2024, 1, 1)
+    d_prev = base_date - timedelta(days=180) # 6 months
+    
+    # M1: +50%
+    p1_curr = StockPrice(ticker_id=s1.id, timestamp=base_date, close=150)
+    p1_prev = StockPrice(ticker_id=s1.id, timestamp=d_prev, close=100)
+    
+    # M2: -10%
+    p2_curr = StockPrice(ticker_id=s2.id, timestamp=base_date, close=90)
+    p2_prev = StockPrice(ticker_id=s2.id, timestamp=d_prev, close=100)
+    
+    db.session.add_all([p1_curr, p1_prev, p2_curr, p2_prev])
+    db.session.commit()
+    
+    score = ScoringService.calculate_momentum_score(s1.id, base_date)
+    assert score == 50
+

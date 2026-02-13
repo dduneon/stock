@@ -42,3 +42,10 @@
   - **Data Handling**: 
     - Uses the most recent financial data available relative to the scoring date.
     - Falls back to neutral score (50) if no sector peers are available.
+  - **Growth Score**: Based on YoY Revenue and EPS growth rates.
+    - Compares current annual record with previous annual record (sorted by date descending).
+    - Uses `higher is better` logic relative to sector peers.
+  - **Momentum Score**: Based on 14-day RSI and 6-month Price Return.
+    - RSI and Return are calculated using `pandas` on `StockPrice` history (last 200 days).
+    - Uses `higher is better` logic relative to sector peers.
+    - Expects `datetime` objects for strict comparison or handles `date` by including full day prices.

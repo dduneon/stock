@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from sqlalchemy import func
 from app import db
 from app.models.stock import Stock
 from app.models.financials import Financials
+from app.models.price import StockPrice
 from app.models.score import StockScore
 import pandas as pd
 import numpy as np
@@ -126,6 +127,208 @@ class ScoringService:
         return ScoringService._calculate_relative_score(target_roe, roe_values, lower_is_better=False)
 
     @staticmethod
+    def calculate_growth_score(ticker_id, date=None):
+        """
+        Calculates growth score based on Revenue and EPS growth (YoY).
+        Higher growth is better.
+        """
+        if date is None:
+            date = datetime.utcnow().date()
+            
+        stock = db.session.get(Stock, ticker_id)
+        if not stock or not stock.sector:
+            return None
+            
+        # Get target stock financials (current and previous year)
+        # We need two most recent annual records or records separated by ~1 year
+        # Simplification: Get top 2 records sorted by date descending
+        
+        target_financials = Financials.query.filter(
+            Financials.ticker_id == ticker_id,
+            Financials.fiscal_date <= date
+        ).order_by(Financials.fiscal_date.desc()).limit(2).all()
+        
+        if len(target_financials) < 2:
+            return None
+            
+        f_curr = target_financials[0]
+        f_prev = target_financials[1]
+        
+        # Calculate Growth for Target
+        def calculate_growth(curr, prev):
+            if prev is None or prev == 0:
+                return None
+            return float((curr - prev) / abs(prev))
+
+        target_rev_growth = calculate_growth(f_curr.revenue, f_prev.revenue) if f_curr.revenue is not None and f_prev.revenue is not None else None
+        target_eps_growth = calculate_growth(f_curr.eps, f_prev.eps) if f_curr.eps is not None and f_prev.eps is not None else None
+        
+        if target_rev_growth is None and target_eps_growth is None:
+            return None
+
+        # Get Sector Peers Growth
+        # Strategy: Get list of peers. For each peer, get top 2 financials. Calculate growth.
+        # Efficient query: We need a complex query to get prev/curr for all peers.
+        # Or just iterate? If sector has 50 stocks, 50 queries is okay-ish.
+        # Better: Fetch all financials for sector in date range, process in Python.
+        
+        # Get all financials for sector stocks <= date
+        # Maybe limit to last 2 years?
+        # Let's just iterate for now to be safe and clear, optimization later if needed.
+        
+        peers = Stock.query.filter(Stock.sector == stock.sector).all()
+        peer_rev_growths = []
+        peer_eps_growths = []
+        
+        for peer in peers:
+            # We already have target, but it's fine to re-calculate in loop or skip
+            if peer.id == ticker_id:
+                if target_rev_growth is not None: peer_rev_growths.append(target_rev_growth)
+                if target_eps_growth is not None: peer_eps_growths.append(target_eps_growth)
+                continue
+                
+            p_fins = Financials.query.filter(
+                Financials.ticker_id == peer.id,
+                Financials.fiscal_date <= date
+            ).order_by(Financials.fiscal_date.desc()).limit(2).all()
+            
+            if len(p_fins) < 2:
+                continue
+                
+            pf_curr = p_fins[0]
+            pf_prev = p_fins[1]
+            
+            g_rev = calculate_growth(pf_curr.revenue, pf_prev.revenue) if pf_curr.revenue is not None and pf_prev.revenue is not None else None
+            g_eps = calculate_growth(pf_curr.eps, pf_prev.eps) if pf_curr.eps is not None and pf_prev.eps is not None else None
+            
+            if g_rev is not None: peer_rev_growths.append(g_rev)
+            if g_eps is not None: peer_eps_growths.append(g_eps)
+            
+        # Calculate Scores
+        rev_score = ScoringService._calculate_relative_score(target_rev_growth, peer_rev_growths, lower_is_better=False)
+        eps_score = ScoringService._calculate_relative_score(target_eps_growth, peer_eps_growths, lower_is_better=False)
+        
+        scores = []
+        if rev_score is not None: scores.append(rev_score)
+        if eps_score is not None: scores.append(eps_score)
+        
+        if not scores:
+            return None
+            
+        return int(sum(scores) / len(scores))
+
+
+    @staticmethod
+    def calculate_momentum_score(ticker_id, date=None):
+        """
+        Calculates momentum score based on RSI and Price Return.
+        Compared against Sector peers.
+        Higher momentum is better.
+        Expects `date` to be a datetime object (or converts to now).
+        """
+        if date is None:
+            date = datetime.utcnow()
+            
+        stock = db.session.get(Stock, ticker_id)
+        if not stock or not stock.sector:
+            return None
+
+        # Helper to get metrics
+        def get_momentum_metrics(tid, ref_date):
+            # Get price history (descending)
+            # Need enough for RSI (14) + some buffer -> 30 days?
+            # And need 6 months ago for Return.
+            # Efficient: Get 6 months + buffer worth of data?
+            # Or just get all data?
+            # Let's get last 200 records.
+            
+            prices = StockPrice.query.filter(
+                StockPrice.ticker_id == tid,
+                StockPrice.timestamp <= ref_date
+            ).order_by(StockPrice.timestamp.desc()).limit(200).all()
+            
+            if not prices:
+                return None, None
+                
+            # Convert to DataFrame for calculations
+            # prices is desc, need asc for pandas
+            data = [{'close': float(p.close), 'date': p.timestamp} for p in prices]
+            df = pd.DataFrame(data).sort_values('date')
+            
+            if df.empty:
+                return None, None
+                
+            # Calculate Return (6 month)
+            # Find price ~6 months ago
+            latest_price = df.iloc[-1]['close']
+            latest_date = df.iloc[-1]['date']
+            
+            # 6 months ago
+            target_prev_date = latest_date - pd.Timedelta(days=180)
+            
+            # Find closest date
+            # Filter df where date <= target_prev_date
+            # Take the last one (closest to 6 months ago)
+            past_df = df[df['date'] <= target_prev_date]
+            
+            six_mo_return = None
+            if not past_df.empty:
+                prev_price = past_df.iloc[-1]['close']
+                if prev_price > 0:
+                    six_mo_return = (latest_price - prev_price) / prev_price
+
+            # Calculate RSI (14)
+            rsi = None
+            if len(df) > 14:
+                delta = df['close'].diff()
+                gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                
+                # Standard RSI uses EMA usually, but SMA is also used.
+                # Wilder's smoothing is standard but let's stick to simple rolling for robustness/simplicity if no lib.
+                # Actually, standard RSI formula:
+                # RS = Avg Gain / Avg Loss
+                # RSI = 100 - (100 / (1 + RS))
+                
+                rs = gain / loss
+                rsi_series = 100 - (100 / (1 + rs))
+                rsi = rsi_series.iloc[-1]
+                
+                # Handle division by zero or NaN
+                if pd.isna(rsi):
+                    rsi = 50 # Neutral? Or None
+                    
+            return rsi, six_mo_return
+
+        target_rsi, target_return = get_momentum_metrics(ticker_id, date)
+        
+        if target_rsi is None and target_return is None:
+            return None
+            
+        # Get Peers Metrics
+        peers = Stock.query.filter(Stock.sector == stock.sector).all()
+        peer_rsis = []
+        peer_returns = []
+        
+        for peer in peers:
+            rsi, ret = get_momentum_metrics(peer.id, date)
+            if rsi is not None: peer_rsis.append(rsi)
+            if ret is not None: peer_returns.append(ret)
+            
+        # Calculate Scores
+        rsi_score = ScoringService._calculate_relative_score(target_rsi, peer_rsis, lower_is_better=False)
+        ret_score = ScoringService._calculate_relative_score(target_return, peer_returns, lower_is_better=False)
+        
+        scores = []
+        if rsi_score is not None: scores.append(rsi_score)
+        if ret_score is not None: scores.append(ret_score)
+        
+        if not scores:
+            return None
+            
+        return int(sum(scores) / len(scores))
+
+    @staticmethod
     def _calculate_relative_score(target_value, peer_values, lower_is_better=True):
         """
         Calculates a percentile-based score (0-100).
@@ -194,6 +397,18 @@ class ScoringService:
             
         val_score = ScoringService.calculate_valuation_score(ticker_id, date)
         prof_score = ScoringService.calculate_profitability_score(ticker_id, date)
+        growth_score = ScoringService.calculate_growth_score(ticker_id, date)
+        
+        # Momentum needs datetime (end of day) if date is provided
+        mom_date = date
+        if type(date) is date:
+            mom_date = datetime(date.year, date.month, date.day, 23, 59, 59)
+        elif isinstance(date, datetime):
+            mom_date = date
+        else:
+            mom_date = datetime.utcnow()
+            
+        mom_score = ScoringService.calculate_momentum_score(ticker_id, mom_date)
         
         # Save to DB
         score = StockScore.query.filter_by(ticker_id=ticker_id, date=date).first()
@@ -202,11 +417,15 @@ class ScoringService:
             
         score.valuation_score = val_score
         score.profitability_score = prof_score
+        score.growth_score = growth_score
+        score.momentum_score = mom_score
         
         # Simple total score for now (average of available components)
         components = []
         if val_score is not None: components.append(val_score)
         if prof_score is not None: components.append(prof_score)
+        if growth_score is not None: components.append(growth_score)
+        if mom_score is not None: components.append(mom_score)
         
         if components:
             score.total_score = int(sum(components) / len(components))

@@ -203,7 +203,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 2
   **Verification**: `pytest tests/test_scoring.py` passes
 
-- [ ] 7. **Scoring Engine: Growth & Momentum Factors**
+- [x] 7. **Scoring Engine: Growth & Momentum Factors**
   **What to do**:
   - Implement algorithms for Growth (Revenue/EPS trend)
   - Implement algorithms for Momentum (RSI, MA cross, Rel. Strength)
