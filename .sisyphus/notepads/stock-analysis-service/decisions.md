@@ -78,3 +78,42 @@
   - **Performance**:
     - `latest_financials` and `latest_score` are fetched with specific queries to avoid loading all history.
     - `prices` endpoint defaults to 30 days history to prevent large payloads.
+
+- **Frontend Technology Stack**:
+  - Next.js 15 with App Router for modern React patterns and server components
+  - TypeScript for type safety across the frontend
+  - Tailwind CSS v4 for utility-first styling
+  - shadcn/ui component library (New York style) for consistent, accessible UI components
+  - next-themes for dark mode implementation with system preference support
+
+- **Design System Aesthetic**:
+  - **Direction**: Brutalist/Editorial with sharp contrasts and geometric precision
+  - **Typography**: Manrope (sans-serif, variable weights 400-800) + IBM Plex Mono (monospace, weights 400-700)
+    - Avoided generic fonts (Inter, Roboto, Geist, Space Grotesk)
+    - Monospace used for numbers and data (tabular-nums) for proper alignment
+  - **Color Palette**: 
+    - Accent: oklch(0.65 0.24 142) - vibrant green for calls-to-action and emphasis
+    - Dark mode default with system preference detection
+    - Zero border radius (brutalist aesthetic)
+  - **Visual Details**:
+    - SVG noise texture overlay (3% opacity) for depth and atmosphere
+    - 4px border width on key elements for strong visual hierarchy
+    - Sharp geometric accents (small squares) for brand identity
+    - Staggered animations (100ms delays) for feature cards
+
+- **Component Architecture**:
+  - `components/navbar.tsx`: Global navigation with dark mode toggle, uses lucide-react icons
+  - `components/theme-provider.tsx`: Wrapper for next-themes ThemeProvider
+  - `components/feature-grid.tsx`: Client component for animated feature cards (avoids styled-jsx SSR issues)
+  - `components/ui/*`: shadcn/ui primitives (Card, Button, Input, Table, Tabs)
+
+- **Environment Configuration**:
+  - `NEXT_PUBLIC_API_URL=http://localhost:5000/api` for backend API communication
+  - Stored in `.env.local` (gitignored by default)
+
+- **Build Configuration**:
+  - Turbopack enabled for faster development and builds
+  - ESLint integration with eslint-config-next
+  - Static site generation (SSG) for landing page
+  - Successful production build verified
+

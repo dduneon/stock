@@ -237,7 +237,7 @@ Scenario: View Stock Detail
 
 ### Wave 3: Frontend & Integration
 
-- [ ] 11. **Next.js Setup & UI Components**
+- [x] 11. **Next.js Setup & UI Components**
   **What to do**:
   - Init Next.js 15 (App Router)
   - Install shadcn/ui components (Card, Table, Button, Input)
