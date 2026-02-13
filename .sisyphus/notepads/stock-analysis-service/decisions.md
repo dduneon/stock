@@ -30,3 +30,15 @@
   - `USFinancialService` uses `yfinance` to fetch both historical (Revenue, Net Income) and current (TTM Ratios) data.
   - Handled data mapping to `Financials` model with appropriate type casting (e.g., float to int for BigInteger fields).
   - Added Celery tasks `update_kr_financials` and `update_us_financials` in `backend/app/tasks/collector.py`.
+
+- **Scoring Engine Algorithm**:
+  - **Valuation Score**: Based on percentile rank of P/E and P/B ratios compared to sector peers.
+    - Used `lower is better` logic.
+    - Negative P/E ratios are penalized (score 0) to prioritize profitable companies.
+  - **Profitability Score**: Based on percentile rank of ROE compared to sector peers.
+    - Used `higher is better` logic.
+  - **Normalization**: Scores are normalized to 0-100 scale using relative ranking within the sector.
+    - Score = (Count of peers worse than target / Total peers) * 100.
+  - **Data Handling**: 
+    - Uses the most recent financial data available relative to the scoring date.
+    - Falls back to neutral score (50) if no sector peers are available.

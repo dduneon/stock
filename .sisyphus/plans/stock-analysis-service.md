@@ -194,7 +194,7 @@ Scenario: View Stock Detail
 
 ### Wave 2: Analysis Engine & API
 
-- [ ] 6. **Scoring Engine: Valuation & Profitability Factors**
+- [x] 6. **Scoring Engine: Valuation & Profitability Factors**
   **What to do**:
   - Implement algorithms for Valuation (P/E, P/B vs Sector)
   - Implement algorithms for Profitability (ROE, Margins)
