@@ -19,3 +19,7 @@
   - `Stock` -> `StockPrice` (one-to-many)
   - `Stock` -> `Financials` (one-to-many)
   - `Stock` -> `Watchlist` (one-to-many)
+
+- **Market Data Source**:
+  - Selected `FinanceDataReader` as the primary library for Korean stock data due to its reliability and ease of use, with `pykrx` as a potential fallback.
+  - Implemented batch upserts for stock prices to minimize database round-trips during daily updates.

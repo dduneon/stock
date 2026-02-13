@@ -169,7 +169,7 @@ Scenario: View Stock Detail
   - TimescaleDB Hypertable docs for `stock_prices`
   **Verification**: `flask db upgrade` succeeds and tables exist in DB
 
-- [ ] 3. **Korean Stock Data Collector (FinanceDataReader/pykrx)**
+- [x] 3. **Korean Stock Data Collector (FinanceDataReader/pykrx)**
   **What to do**:
   - Implement `KoreanMarketService` to fetch ticker list and OHLCV
   - Handle rate limits and errors

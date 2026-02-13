@@ -2,3 +2,6 @@
 - Configured Flask app to use environment variables with a default fallback for development.
 - Implemented a basic health check endpoint at /health.
 - Structured the backend with a clear separation between app initialization (app/__init__.py) and entry point (app.py).
+- Implemented `KoreanMarketService` to interface with `FinanceDataReader` (FDR) for retrieving KOSPI and KOSDAQ stock data.
+- Used SQLAlchemy's `on_conflict_do_update` (PostgreSQL `UPSERT`) to handle idempotent updates of `Stock` and `StockPrice` records efficiently.
+- Added rate limiting (sleep) in Celery tasks to respect data source constraints during bulk updates.
