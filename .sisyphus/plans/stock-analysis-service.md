@@ -52,10 +52,10 @@
 - **User System**: 회원가입/로그인, 관심종목 관리
 
 ### Definition of Done
-- [ ] `docker compose up` 명령어로 전체 서비스(FE, BE, DB, Worker)가 정상 구동됨
-- [ ] 매일 지정된 시간에 데이터 수집 및 점수 갱신 작업이 성공적으로 완료됨
-- [ ] 웹 대시보드에서 추천 종목 리스트와 상세 차트가 정상적으로 표시됨
-- [ ] 사용자 로그인 및 관심종목 추가/삭제가 정상 작동함
+- [x] `docker compose up` 명령어로 전체 서비스(FE, BE, DB, Worker)가 정상 구동됨
+- [x] 매일 지정된 시간에 데이터 수집 및 점수 갱신 작업이 성공적으로 완료됨
+- [x] 웹 대시보드에서 추천 종목 리스트와 상세 차트가 정상적으로 표시됨
+- [x] 사용자 로그인 및 관심종목 추가/삭제가 정상 작동함
 
 ### Must Have
 - 다중 팩터 스코어링 (Valuation, Growth, Profitability, Momentum, Revision)
@@ -293,8 +293,8 @@ Scenario: View Stock Detail
 - `feat(ui): implement stock detail page`
 
 ## Success Criteria
-- [ ] Docker containers run without errors
-- [ ] API responds within 500ms for read operations
-- [ ] Daily data update completes within 1 hour
-- [ ] 5-Factor scores calculated for all target stocks
-- [ ] Frontend displays charts and data correctly in Korean/English
+- [x] Docker containers run without errors
+- [x] API responds within 500ms for read operations
+- [x] Daily data update completes within 1 hour
+- [x] 5-Factor scores calculated for all target stocks
+- [x] Frontend displays charts and data correctly in Korean/English
