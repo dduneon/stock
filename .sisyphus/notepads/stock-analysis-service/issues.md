@@ -1,4 +1,0 @@
-- Docker and Docker Compose were not found in the current environment (darwin), preventing full verification of the infrastructure setup.
-- Python dependencies (flask, sqlalchemy, etc.) are not installed in the host environment, causing LSP diagnostics to report missing imports.
-- `yfinance` requires `pandas` and `lxml` (for `read_html`), which were missing from the environment. `lxml` and `requests` were added to `backend/requirements.txt`.
-- S&P 500 tickers on Wikipedia use `.` (e.g., `BRK.B`), while `yfinance` uses `-` (e.g., `BRK-B`). Mapped accordingly in `USMarketService`.

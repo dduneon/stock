@@ -12,3 +12,4 @@ ENV/
 instance/
 .pytest_cache/
 .env*
+.sisyphus
