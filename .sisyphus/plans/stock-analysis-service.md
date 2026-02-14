@@ -268,7 +268,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 3
   **Verification**: Playwright test validates all sections
 
-- [ ] 15. **User Auth & Watchlist UI**
+- [x] 15. **User Auth & Watchlist UI**
   **What to do**:
   - Login/Register forms
   - Watchlist page
