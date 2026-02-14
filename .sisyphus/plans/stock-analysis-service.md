@@ -260,7 +260,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 3
   **Verification**: Playwright test verifies data display
 
-- [ ] 14. **Stock Detail Page**
+- [x] 14. **Stock Detail Page**
   **What to do**:
   - Page `/stock/[ticker]`
   - Display Price, Radar Chart (Scores), Financial Summary
