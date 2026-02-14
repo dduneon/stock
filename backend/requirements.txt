@@ -11,7 +11,7 @@ python-dotenv==1.0.1
 gunicorn==21.2.0
 
 # Korean Market
-FinanceDataReader==0.9.50
+finance-datareader==0.9.80
 pykrx==1.0.46
 
 # US Market

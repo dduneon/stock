@@ -6,12 +6,17 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     watchlists = db.relationship('Watchlist', backref='user', lazy='dynamic')
+
+    def __init__(self, username=None, email=None):
+        self.username = username
+        self.email = email
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
