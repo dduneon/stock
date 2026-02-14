@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from celery import Celery
 from config import config
 import os
+import celeryconfig
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -30,6 +31,7 @@ def create_app(config_name=None):
     cache.init_app(app)
     
     # Configure Celery
+    celery.config_from_object(celeryconfig)
     celery.conf.update(app.config)
     
     # Task context for Celery

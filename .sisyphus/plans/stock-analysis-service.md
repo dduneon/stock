@@ -276,7 +276,7 @@ Scenario: View Stock Detail
   **Parallel Group**: Wave 3
   **Verification**: E2E test: Login → Go to Watchlist → Add Stock → Verify
 
-- [ ] 16. **Celery Scheduler & Deployment Config**
+- [x] 16. **Celery Scheduler & Deployment Config**
   **What to do**:
   - Config Celery Beat for daily updates (e.g., 00:00 UTC)
   - Finalize `docker-compose.yml` for production

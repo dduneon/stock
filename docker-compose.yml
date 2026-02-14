@@ -43,8 +43,6 @@ services:
       - FLASK_ENV=development
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    ports:
-      - "5000:5000"
     volumes:
       - ./backend:/app
     depends_on:
@@ -95,6 +93,30 @@ services:
       redis:
         condition: service_healthy
     command: celery -A app.celery beat --loglevel=info
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stock-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=/api
+    depends_on:
+      - flask-app
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: stock-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - flask-app
+      - frontend
+    restart: unless-stopped
 
 volumes:
   postgres_data:
