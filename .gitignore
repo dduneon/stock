@@ -11,3 +11,4 @@ ENV/
 *.bak
 instance/
 .pytest_cache/
+.env*
